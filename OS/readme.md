@@ -1,6 +1,9 @@
 
 ## 参考书籍
 
+[《x86汇编语言：从实模式到保护模式（第2版）》]()
+[《操作系统真相还原》]()
+
 ## Vscode插件
 
 > Name: ASM Code Lens
@@ -83,12 +86,33 @@ VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=ms-vsco
 ### GIT
 
 [linux下连接github](https://www.cnblogs.com/woider/p/6533709.html)
+[端口代理](https://ericclose.github.io/git-proxy-config.html)
+[DNS污染解决](https://zhuanlan.zhihu.com/p/521340971)
 
 ### 创建硬盘镜像
 
+> [When you run bximage without one of the following options, it will appear in interactive mode and ask for all required parameters to manipulate an image.](https://manpages.debian.org/testing/bximage/bximage.1.en.html)
+
+> **-func=...**
+Operation to perform (create, convert, resize, commit, info)
+**-fd=...**
+Create: floppy image with size code (e.g. 360k, 720k, 1.44M)
+**-hd=...**
+Create/resize: hard disk image with size in megabytes (M) or gigabytes (G)
+**-imgmode=...**
+Create/convert: hard disk image mode - see the bochsrc sample for supported options.
+**-b**
+Convert/resize: create a backup of the source image. Commit: create backups of base image and redolog file.
+**-q**
+Quiet mode (don't prompt for user input). Without this option bximage uses the command line parameters as defaults for the interactive mode. If this option is given and one of the required parameters is missing, bximage will fall back to interactive mode.
+**--help**
+Print a summary of the command line options for bximage and exit.
+
+理论上命令按照上文引用, 实际操作命令建议使用``bximage --help``查看
+
 创建硬盘镜像
 
-    bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat master.img
+    bximage -q -hd=16 -mode=create -imgmode=flat master.img
 
 将 boot.bin 写入主引导扇区
 
@@ -158,3 +182,55 @@ com2: enabled=0
 com3: enabled=0
 com4: enabled=0
 ```
+
+## 实模式
+
+### 8086寻址方式
+
+实际地址 = 段地址 << 4 + 偏移地址
+
+### 古老的INTEL 8086处理器
+
+◆ 数据段可以起始于内存中的任何位置
+
+◆ 为了让你写的程序在卖给别人之后，可以在内存中的任何地方正确执行，就只能在编写程序的时候使用相对地址或者逻辑地址，而不能使用真实的物理地址。当加载程序时，这些相对地址还要根据程序实际被加载的位置重新计算。
+
+◆ 为了在硬件一级提供对“段地址:偏移地址”内存访问模式的支持，处理器至少要提供两个段寄存器，分别是代码段寄存器(Code Segment, CS)和数据段寄存器(Data Segment, DS)。
+
+◆ CS是代码段寄存器，DS是数据段寄存器，ES是附加段(Extra Segment)寄存器。附加段的意思是，它是额外赠送的礼物，当需要在程序中同时使用两个数据段时，DS指向一个，ES指向另一个。可以在指令中指定使用DS和ES中的哪一个，如果没有指定，则默认使用DS。SS是栈段(Stack Segment)寄存器
+
+◆ IP是指令指针(Instruction Pointer)寄存器，它只和CS一起使用，而且只有处理器才能直接改变它的内容。当一段代码开始执行时，CS保存代码段的段地址，IP则指向段内偏移。这样，由CS和IP共同形成逻辑地址，并由总线接口部件变换成物理地址来取得指令。然后，处理器会自动根据当前指令的长度来改变IP的值，使它指向下一条指令。
+
+◆ **段只能起始于那些能够被16整除的物理内存地址**。对8086处理器来说，将这样的内存地址除以16或者右移4位，得到的结果就是逻辑段地址，简称段地址。要访问一个段，需要将段地址传送到段寄存器。
+
+◆ 每个段正好16字节，偏移地址从0000H到000FH。
+
+◆ 同样在不允许段之间重叠的情况下，每个段的最大长度是64KB，因为偏移地址也是16位的，从0000H到FFFFH。在这种情况下，1MB的内存，最多只能划分成16个段，每段长64KB，段地址分别是0000H、1000H、2000H、3000H，…，F000H。
+
+◆ 段地址的选择取决于内存中哪些区域是空闲的。举个例子来说，假如从物理地址00000H开始，一直到82251H处都被其他程序占用着，而后面一直到FFFFFH的地址空间都是自由的，那么，你可以从物理内存地址82251H之后的地方加载你的程序。
+
+◆ **8086处理器的逻辑分段，起始地址都是16的倍数，这称为是按16字节对齐的**。
+
+◆ 段的划分是自由的，它可以起始于任何16字节对齐的内存地址，也可以是任意长度，只要不超过64KB。
+
+### 8086文本模式
+
+◆ 传统上，这种专门用于显示字符的工作方式称为文本模式。文本模式和图形模式是显卡的两种基本工作模式，可以用指令访问显卡，设置它的显示模式。在不同的工作模式下，显卡对显存内容的解释是不同的。
+
+◆ 8086可以访问1MB内存。其中，0x00000～9FFFF属于常规内存，由内存条提供；0xF0000～0xFFFFF由主板上的一个芯片提供，即ROM-BIOS。这样一来，中间还有一个320KB的空洞，即0xA0000～0xEFFFF。传统上，这段地址空间由特定的外围设备来提供，其中就包括显卡。
+
+◆ 一直以来，0xB8000～0xBFFFF这段物理地址空间，是留给显卡的，由显卡来提供，用来显示文本。
+
+◆ 为了访问显存，也需要使用逻辑地址，也就是采用“段地址:偏移地址”的形式，这是处理器的要求。考虑到文本模式下显存的起始物理地址是0xB8000，这块内存可以看成段地址为0xB800，偏移地址从0x0000延伸到0xFFFF的区域，因此我们可以把段地址定为0xB800。
+
+◆ 屏幕上的每个字符对应着显存中连续2字节，前一个是字符的ASCII代码，后面是字符的显示属性，包括字符颜色（前景色）和底色（背景色）。
+
+◆ 字符的显示属性（1字节）分为两部分，低4位定义的是前景色，高4位定义的是背景色。色彩主要由R、G、B这3位决定，毕竟我们知道，可以由红(R)、绿(G)、蓝(B)三原色来配出其他所有颜色。K是闪烁位，为0时不闪烁，为1时闪烁；I是亮度位，为0时正常亮度，为1时呈高亮。表6-2给出了背景色和前景色的所有可能值。
+
+### 内存分布
+
+![Alt text](assets/image.png)
+
+### 主引导扇区
+
+
