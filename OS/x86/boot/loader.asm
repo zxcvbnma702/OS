@@ -2,13 +2,13 @@
 
 dw 0x55aa; 魔数，用于判断错误
 
-xchg bx, bx; 断点
+; xchg bx, bx; 断点
 
 ; 打印字符串
 mov si, loading
 call print
 
-xchg bx, bx; 断点
+; xchg bx, bx; 断点
 
 ; 参见 readme 中内存检测部分
 detect_memory:
@@ -46,14 +46,14 @@ detect_memory:
     mov si, detecting
     call print
 
-    xchg bx, bx
+    ; xchg bx, bx
 
     mov byte [0xb8000], 'P'
 
     jmp prepare_protected_mode
 
 prepare_protected_mode:
-    xchg bx, bx; 断点
+    ; xchg bx, bx; 断点
 
     cli; 关闭中断
 
@@ -99,7 +99,7 @@ error:
 
 [bits 32]
 protect_mode:
-    xchg bx, bx; 断点
+    ; xchg bx, bx; 断点
     mov ax, data_selector
     mov ds, ax
     mov es, ax
