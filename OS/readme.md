@@ -192,6 +192,28 @@ com3: enabled=0
 com4: enabled=0
 ```
 
+### 配置QUEM
+
+> 从 qemu 7.0.0 更新开始我们用元包（meta package）将它拆包成了更细分的打包。
+
+- qemu包现在是被元包 ``qemu-base``, ``qemu-desktop`` 和 ``qemu-full`` 提供的虚包。
+- 7.0.0之前的qemu包的功能现在被``qemu-desktop``代替。
+- ``qemu-headless``包的功能现在被``qemu-base``代替。
+- ``qemu-arch-extra``包和``qemu-headless-arch-extra``包的功能现在被``qemu-emulators-full``代替。
+- 元包``qemu-full``包提供所有 QEMU 相关的包（除了``qemu-guest-agent``)
+
+
+安装QUEM
+
+    sudo pacman -S qemu-full
+
+If can`t open shared files libcapstone.so
+
+    sudo pacman -S 
+Exit QUEM Windows
+
+    Ctrl + Alt + G
+
 ## 实模式
 
 ### 8086寻址方式
@@ -478,7 +500,7 @@ com4: enabled=0
 
 ◆ INTEL处理器是低端字节序的，所以低双字在低地址端，高双字在高地址端；低字在低地址端，高字在高地址端；低字节在低地址端，高字节在高地址端。
 
-◆ 加载描述符表的线性基地址和界限到寄存器GDTR，这要使用``lgd``t指令
+◆ 加载描述符表的线性基地址和界限到寄存器GDTR，这要使用``lgdt``指令
 
 ◆ lgdt指令从指定的内存地址处加载**6字节**的数据到寄存器GDTR，其中包括32位的GDT线性地址及16位的界限值。该指令在实模式和保护模式下都可以执行，但是在实模式下使用16位的有效地址m访问内存；在32位保护模式下使用32位的有效地址m访问内存。
 
@@ -502,7 +524,7 @@ com4: enabled=0
 
 ◆ 在保护模式下访问一个段时，传送到段寄存器的是**段选择子**。它由三部分组成，第一部分是描述符的索引号，用来在描述符表中选择一个段描述符。TI是描述符表指示器(Table Indicator)，TI=0时，表示描述符在GDT中；TI=1时，描述符在LDT中。LDT的知识将在后面进行介绍，它也是一个描述符表，和GDT类似。RPL是请求特权级，表示给出当前选择子的那个程序的特权级别，正是该程序要求访问这个内存段。每个程序都有特权级别，也将在后面慢慢介绍，现在只需要将这两位置成“00”即可。
 
-◆ 当处理器在执行任何改变段选择器的指令时（比如pop、mov、jmp far、call far、iret、retf），就将**指令中提供的索引号乘以8作为偏移地址，同GDTR中提供的线性基地址相加，以访问GDT。**如果没有发现什么问题（比如超出了GDT的界限），就自动将找到的描述符加载到不可见的描述符高速缓存部分。
+◆ 当处理器在执行任何改变段选择器的指令时（比如pop、mov、jmp far、call far、iret、retf），就将**指令中提供的索引号乘以8作为偏移地址，同GDTR中提供的线性基地址相加，以访问GDT**。如果没有发现什么问题（比如超出了GDT的界限），就自动将找到的描述符加载到不可见的描述符高速缓存部分。
 
 ![alt text](assets/image-21.png)
 
