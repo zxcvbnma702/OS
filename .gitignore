@@ -1,0 +1,16 @@
+*.img
+*.ini
+*.bin
+*.map
+*.o
+*.out
+*.zst
+*.gz
+*.lock
+*.vmdk
+*.log
+*.pyc
+
+OS/build
+OS/x86/bochs-2.6.9
+.vscode

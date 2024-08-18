@@ -58,7 +58,7 @@ prepare_protected_mode:
     cli; 关闭中断
 
     ; 打开 A20 线
-    in al,  0x92
+    in al, 0x92
     or al, 0b10
     out 0x92, al
 
